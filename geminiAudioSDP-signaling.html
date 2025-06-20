@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,111 +24,139 @@
             padding: 20px;
             box-sizing: border-box;
         }
+
         /* Container for the user panels, responsive layout */
         .container {
             display: flex;
-            flex-direction: column; /* Stack vertically on small screens */
+            flex-direction: column;
+            /* Stack vertically on small screens */
             gap: 20px;
             width: 100%;
-            max-width: 1200px; /* Max width for larger screens */
+            max-width: 1200px;
+            /* Max width for larger screens */
             box-sizing: border-box;
         }
+
         /* Media query for medium screens and up to arrange panels side-by-side */
         @media (min-width: 768px) {
             .container {
-                flex-direction: row; /* Arrange horizontally on wider screens */
+                flex-direction: row;
+                /* Arrange horizontally on wider screens */
             }
         }
+
         /* Styling for individual user panels */
         .user-panel {
             background-color: #ffffff;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             padding: 24px;
-            flex: 1; /* Allows panels to grow and shrink */
+            flex: 1;
+            /* Allows panels to grow and shrink */
             display: flex;
             flex-direction: column;
             gap: 16px;
-            transition: all 0.3s ease-in-out; /* Smooth transitions for state changes */
+            transition: all 0.3s ease-in-out;
+            /* Smooth transitions for state changes */
         }
+
         /* Highlight border for active calls */
         .user-panel.active-call {
             border: 2px solid #3b82f6;
         }
+
         /* General button styling */
         .btn {
             padding: 12px 20px;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s; /* Smooth hover effects */
+            transition: background-color 0.2s, transform 0.1s;
+            /* Smooth hover effects */
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         /* Button hover effect */
         .btn:hover {
             transform: translateY(-1px);
         }
+
         /* Primary button style */
         .btn-primary {
             background-color: #3b82f6;
             color: white;
         }
+
         .btn-primary:hover {
             background-color: #2563eb;
         }
+
         /* Success button style */
         .btn-success {
             background-color: #22c55e;
             color: white;
         }
+
         .btn-success:hover {
             background-color: #16a34a;
         }
+
         /* Danger button style */
         .btn-danger {
             background-color: #ef4444;
             color: white;
         }
+
         .btn-danger:hover {
             background-color: #dc2626;
         }
+
         /* Secondary button style */
         .btn-secondary {
             background-color: #e5e7eb;
             color: #4b5563;
         }
+
         .btn-secondary:hover {
             background-color: #d1d5db;
         }
+
         /* Status message styling */
         .status-message {
             padding: 12px;
             border-radius: 8px;
             font-size: 0.9rem;
             text-align: center;
-            opacity: 0; /* Hidden by default */
+            opacity: 0;
+            /* Hidden by default */
             transition: opacity 0.3s ease-in-out;
         }
+
         .status-message.show {
-            opacity: 1; /* Show when 'show' class is added */
+            opacity: 1;
+            /* Show when 'show' class is added */
         }
+
         /* Specific status message colors */
         .status-info {
             background-color: #eff6ff;
             color: #1e40af;
         }
+
         .status-success {
             background-color: #dcfce7;
             color: #15803d;
         }
+
         .status-error {
             background-color: #fee2e2;
             color: #991b1b;
         }
+
         /* Notification box for incoming calls */
         .notification-box {
             background-color: #fffbeb;
@@ -136,24 +165,32 @@
             padding: 10px 15px;
             border-radius: 8px;
             margin-top: 15px;
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
             align-items: center;
             justify-content: space-between;
             gap: 10px;
         }
+
         .notification-box.show {
-            display: flex; /* Show when 'show' class is added */
+            display: flex;
+            /* Show when 'show' class is added */
         }
+
         /* Audio element styling */
         audio {
             width: 100%;
             border-radius: 8px;
             margin-top: 10px;
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
         }
+
         audio.show {
-            display: block; /* Show when 'show' class is added */
+            display: block;
+            /* Show when 'show' class is added */
         }
+
         /* Recording controls layout */
         .recording-controls {
             display: flex;
@@ -161,41 +198,49 @@
             margin-top: 10px;
             justify-content: center;
         }
+
         .recording-controls button {
-            flex-grow: 1; /* Buttons expand to fill available space */
+            flex-grow: 1;
+            /* Buttons expand to fill available space */
         }
+
         /* Recorded files section */
         .recorded-files {
             margin-top: 15px;
             border-top: 1px solid #e0e0e0;
             padding-top: 15px;
         }
+
         .recorded-files h3 {
             font-weight: 600;
             margin-bottom: 10px;
             text-align: center;
             color: #333;
         }
+
         .recorded-files ul {
             list-style: none;
             padding: 0;
-            max-height: 150px; /* Scrollable list for many recordings */
+            max-height: 150px;
+            /* Scrollable list for many recordings */
             overflow-y: auto;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             padding: 10px;
             background-color: #f9f9f9;
         }
+
         .recorded-files li {
             background-color: #fff;
             margin-bottom: 8px;
             padding: 10px;
             border-radius: 6px;
             display: flex;
-            justify-content:center;
+            justify-content: center;
             align-items: center;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
+
         .recorded-files li a {
             color: #3b82f6;
             text-decoration: none;
@@ -206,9 +251,11 @@
             white-space: nowrap;
             flex-grow: 1;
         }
+
         .recorded-files li a:hover {
             text-decoration: underline;
         }
+
         .recorded-files li button {
             background-color: #ef4444;
             color: white;
@@ -219,12 +266,15 @@
             font-size: 0.8rem;
             transition: background-color 0.2s;
         }
+
         .recorded-files li button:hover {
             background-color: #dc2626;
         }
+
         /* Recording indicator (flashing dot) */
         .recording-indicator {
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
             align-items: center;
             justify-content: center;
             gap: 5px;
@@ -232,22 +282,39 @@
             font-weight: 600;
             margin-top: 5px;
         }
+
         .recording-indicator.show {
-            display: flex; /* Show when 'show' class is added */
+            display: flex;
+            /* Show when 'show' class is added */
         }
+
         .recording-dot {
             width: 10px;
             height: 10px;
             background-color: #ef4444;
             border-radius: 50%;
-            animation: pulse 1.5s infinite; /* Pulse animation */
+            animation: pulse 1.5s infinite;
+            /* Pulse animation */
         }
+
         /* Keyframes for the pulse animation */
         @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.7; }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
+
         /* Styling for SDP display areas */
         .sdp-display {
             background-color: #f9fafb;
@@ -256,17 +323,23 @@
             padding: 10px;
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
             font-size: 0.8rem;
-            white-space: pre-wrap; /* Preserve whitespace and wrap long lines */
-            word-break: break-all; /* Break words to prevent horizontal scroll */
+            white-space: pre-wrap;
+            /* Preserve whitespace and wrap long lines */
+            word-break: break-all;
+            /* Break words to prevent horizontal scroll */
             max-height: 200px;
             overflow-y: auto;
             color: #374151;
             margin-top: 10px;
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
         }
+
         .sdp-display.show {
-            display: block; /* Show when 'show' class is added */
+            display: block;
+            /* Show when 'show' class is added */
         }
+
         .sdp-label {
             font-weight: 600;
             margin-top: 10px;
@@ -275,10 +348,13 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Role Selection Modal: Appears if no role is specified in the URL -->
-    <div id="role-selection-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
-        <div style="background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.15); display:flex; flex-direction:column; align-items:center; gap:20px; min-width:300px;">
+    <div id="role-selection-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+        <div
+            style="background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.15); display:flex; flex-direction:column; align-items:center; gap:20px; min-width:300px;">
             <h2 class="text-xl font-bold mb-2">Select your role</h2>
             <div style="display:flex; gap:16px;">
                 <button id="selectUserA" class="btn btn-primary">User A</button>
@@ -305,8 +381,13 @@
                 <button id="startRecordingA-btn" class="btn btn-secondary hidden">Start Recording</button>
                 <button id="stopRecordingA-btn" class="btn btn-secondary hidden">Stop Recording</button>
             </div>
-            <div id="recordingIndicatorA" class="recording-indicator"><div class="recording-dot"></div> Recording...</div>
-            <div class="recorded-files" id="recordedFilesA"><h3>Recorded Audio</h3><ul id="recordedListA"></ul></div>
+            <div id="recordingIndicatorA" class="recording-indicator">
+                <div class="recording-dot"></div> Recording...
+            </div>
+            <div class="recorded-files" id="recordedFilesA">
+                <h3>Recorded Audio</h3>
+                <ul id="recordedListA"></ul>
+            </div>
 
             <!-- SDP Display for User A -->
             <div class="sdp-label">SDP Offer (Local)</div>
@@ -332,8 +413,13 @@
                 <button id="startRecordingB-btn" class="btn btn-secondary hidden">Start Recording</button>
                 <button id="stopRecordingB-btn" class="btn btn-secondary hidden">Stop Recording</button>
             </div>
-            <div id="recordingIndicatorB" class="recording-indicator"><div class="recording-dot"></div> Recording...</div>
-            <div class="recorded-files" id="recordedFilesB"><h3>Recorded Audio</h3><ul id="recordedListB"></ul></div>
+            <div id="recordingIndicatorB" class="recording-indicator">
+                <div class="recording-dot"></div> Recording...
+            </div>
+            <div class="recorded-files" id="recordedFilesB">
+                <h3>Recorded Audio</h3>
+                <ul id="recordedListB"></ul>
+            </div>
 
             <!-- SDP Display for User B -->
             <div class="sdp-label">SDP Offer (Remote)</div>
@@ -671,63 +757,31 @@
 
         // Function to create and configure a new RTCPeerConnection
         function createPeerConnection(currentUserId, remoteUserId) {
-            // Close existing peer connection if it exists to ensure a clean slate
-            if (peerConnections[currentUserId]) {
-                peerConnections[currentUserId].close();
-                delete peerConnections[currentUserId];
-            }
-
-            const pc = new RTCPeerConnection(rtcConfig); // Create new RTCPeerConnection
-            peerConnections[currentUserId] = pc; // Store it
-
-            // Event handler for ICE candidates: send them to the other peer via the signaling server
+            if (peerConnections[currentUserId]) { peerConnections[currentUserId].close(); delete peerConnections[currentUserId]; }
+            const pc = new RTCPeerConnection(rtcConfig);
+            peerConnections[currentUserId] = pc;
             pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    // ICE Process: When a new ICE candidate is generated, send it to the other peer.
-                    // This candidate describes a potential way to connect to this peer.
-                    console.log(`ICE Candidate for ${currentUserId}: `, event.candidate);
-                    showStatus(getEl(`${currentUserId}-status`), `Generated ICE candidate.`, 'info');
-                    socket.emit('ice-candidate', { from: currentUserId, to: remoteUserId, candidate: event.candidate });
-                }
+                if (event.candidate) socket.emit('ice-candidate', { from: currentUserId, to: remoteUserId, candidate: event.candidate });
             };
-
-            // Event handler for when a remote track is received (e.g., other user's audio)
             pc.ontrack = (event) => {
                 if (event.streams && event.streams[0]) {
-                    remoteStreams[currentUserId] = event.streams[0]; // Store the remote stream
-                    getEl(`${currentUserId}-panel`).classList.add('active-call'); // Highlight panel
+                    remoteStreams[currentUserId] = event.streams[0];
+                    getEl(`${currentUserId}-panel`).classList.add('active-call');
                     showStatus(getEl(`${currentUserId}-status`), `Connected with ${remoteUserId}`, 'success');
-                    // Once both local and remote streams are available, initialize the audio pipeline for recording
-                    initializeAudioPipelineAndRecorder(currentUserId, remoteUserId);
+                    // Play only the remote stream (no mixing for playback)
+                    const remoteAudioEl = getEl(`remoteAudio${currentUserId === 'userA' ? 'A' : 'B'}`);
+                    remoteAudioEl.srcObject = event.streams[0];
+                    remoteAudioEl.classList.add('show');
                 }
             };
-
-            // Event handler for changes in ICE connection state
             pc.oniceconnectionstatechange = () => {
                 const statusDiv = getEl(`${currentUserId}-status`);
                 const state = pc.iceConnectionState;
-                // ICE Process: Monitor the state of the ICE connection.
-                // 'new': initial state.
-                // 'checking': gathering and exchanging candidates.
-                // 'connected': connection established (at least one candidate pair working).
-                // 'completed': ICE negotiation finished, all candidate pairs checked.
-                // 'disconnected': connection lost temporarily.
-                // 'failed': connection permanently lost.
-                console.log(`${currentUserId} ICE connection state: ${state}`);
-                if (state === 'connected') {
-                    showStatus(statusDiv, `${currentUserId} ICE connection state: ${state} (Audio flowing)`, 'success');
-                } else if (state === 'failed' || state === 'disconnected') {
-                    showStatus(statusDiv, `${currentUserId} ICE connection state: ${state}. Call might be interrupted.`, 'error');
-                } else {
-                    showStatus(statusDiv, `${currentUserId} ICE connection state: ${state}...`, 'info');
-                }
+                if (state === 'connected') showStatus(statusDiv, `${currentUserId} ICE connection state: ${state}`, 'success');
+                else if (state === 'failed' || state === 'disconnected') showStatus(statusDiv, `${currentUserId} ICE connection state: ${state}. Call might be interrupted.`, 'error');
+                else showStatus(statusDiv, `${currentUserId} ICE connection state: ${state}...`, 'info');
             };
-
-            // Event handler for signaling state changes (e.g., 'stable', 'have-local-offer')
-            pc.onsignalingstatechange = () => {
-                console.log(`${currentUserId} Signaling state: ${pc.signalingState}`);
-            };
-
+            pc.onsignalingstatechange = () => {};
             return pc;
         }
 
@@ -1118,4 +1172,5 @@
         // --- End Initialization on Window Load ---
     </script>
 </body>
+
 </html>
