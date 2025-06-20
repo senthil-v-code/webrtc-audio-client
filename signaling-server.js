@@ -2,6 +2,7 @@
 const http = require('http'); // HTTP server module
 const express = require('express'); // Web framework for Node.js
 const { Server } = require('socket.io'); // WebSocket library for real-time communication
+const mediasoup = require('mediasoup'); // Mediasoup library for SFU functionality
 
 // Initialize Express app
 const app = express();
@@ -26,6 +27,29 @@ const users = {}; // Example: { 'userA': 'socketId123', 'userB': 'socketId456' }
 // Stores active call sessions, potentially linking to Mediasoup room/session IDs
 // This would be crucial for instructing the media server which call to record.
 const activeCallSessions = {}; // Example: { 'userA_userB_callId': { mediasoupRoomId: 'xyz', participants: ['userA', 'userB'] } }
+
+
+// --- Mediasoup Integration Scaffold ---
+let worker;
+let router;
+const mediasoupRooms = {}; // { roomId: { router, transports, producers, consumers } }
+
+// Start mediasoup worker and router on server startup
+(async () => {
+  worker = await mediasoup.createWorker();
+  router = await worker.createRouter({
+    mediaCodecs: [
+      {
+        kind: 'audio',
+        mimeType: 'audio/opus',
+        clockRate: 48000,
+        channels: 2
+      }
+    ]
+  });
+  console.log('Mediasoup worker and router started.');
+})();
+// --- End Mediasoup Integration Scaffold ---
 
 
 // Event listener for new Socket.io connections

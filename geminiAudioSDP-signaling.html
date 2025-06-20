@@ -432,7 +432,7 @@
     <script>
         // --- Socket.io Signaling Setup ---
         // Connect to the Socket.io signaling server running on localhost:3001
-        const socket = io('https://webrtc-audio-client.onrender.com');
+        const socket = io('http://localhost:3001');
 
         let myRole = null; // Stores the current user's role ('userA' or 'userB')
         let otherRole = null; // Stores the role of the other user
@@ -739,7 +739,10 @@
             remoteAudioSource.connect(destinationNode);
             // Set up the MediaRecorder to record the mixed stream
             setupMediaRecorder(userId, destinationNode.stream);
-            getEl(`startRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.remove('hidden');
+            // Only show recording controls for User A
+            if (userId === 'userA') {
+                getEl('startRecordingA-btn').classList.remove('hidden');
+            }
         }
 
 
@@ -756,12 +759,13 @@
                     remoteStreams[currentUserId] = event.streams[0];
                     getEl(`${currentUserId}-panel`).classList.add('active-call');
                     showStatus(getEl(`${currentUserId}-status`), `Connected with ${remoteUserId}`, 'success');
-                    // Play only the remote stream (no mixing for playback)
                     const remoteAudioEl = getEl(`remoteAudio${currentUserId === 'userA' ? 'A' : 'B'}`);
                     remoteAudioEl.srcObject = event.streams[0];
                     remoteAudioEl.classList.add('show');
-                    // Set up the mixed audio pipeline for recording (local + remote)
-                    initializeAudioPipelineAndRecorder(currentUserId, remoteUserId);
+                    // Only User A gets the mixed audio pipeline for recording
+                    if (currentUserId === 'userA') {
+                        initializeAudioPipelineAndRecorder(currentUserId, remoteUserId);
+                    }
                 }
             };
             pc.oniceconnectionstatechange = () => {
