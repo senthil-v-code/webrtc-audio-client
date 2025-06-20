@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Calling Product (Signaling Enabled)</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Socket.io client library for real-time communication with the signaling server -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        /* Base styling for the body to center content and apply a global font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        /* Container for the user panels, responsive layout */
+        .container {
+            display: flex;
+            flex-direction: column; /* Stack vertically on small screens */
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px; /* Max width for larger screens */
+            box-sizing: border-box;
+        }
+        /* Media query for medium screens and up to arrange panels side-by-side */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row; /* Arrange horizontally on wider screens */
+            }
+        }
+        /* Styling for individual user panels */
+        .user-panel {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            flex: 1; /* Allows panels to grow and shrink */
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            transition: all 0.3s ease-in-out; /* Smooth transitions for state changes */
+        }
+        /* Highlight border for active calls */
+        .user-panel.active-call {
+            border: 2px solid #3b82f6;
+        }
+        /* General button styling */
+        .btn {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s; /* Smooth hover effects */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        /* Button hover effect */
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        /* Primary button style */
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+        /* Success button style */
+        .btn-success {
+            background-color: #22c55e;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #16a34a;
+        }
+        /* Danger button style */
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        /* Secondary button style */
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #4b5563;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+        /* Status message styling */
+        .status-message {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-align: center;
+            opacity: 0; /* Hidden by default */
+            transition: opacity 0.3s ease-in-out;
+        }
+        .status-message.show {
+            opacity: 1; /* Show when 'show' class is added */
+        }
+        /* Specific status message colors */
+        .status-info {
+            background-color: #eff6ff;
+            color: #1e40af;
+        }
+        .status-success {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+        .status-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        /* Notification box for incoming calls */
+        .notification-box {
+            background-color: #fffbeb;
+            border: 1px solid #fcd34d;
+            color: #b45309;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .notification-box.show {
+            display: flex; /* Show when 'show' class is added */
+        }
+        /* Audio element styling */
+        audio {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: none; /* Hidden by default */
+        }
+        audio.show {
+            display: block; /* Show when 'show' class is added */
+        }
+        /* Recording controls layout */
+        .recording-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+        .recording-controls button {
+            flex-grow: 1; /* Buttons expand to fill available space */
+        }
+        /* Recorded files section */
+        .recorded-files {
+            margin-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 15px;
+        }
+        .recorded-files h3 {
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #333;
+        }
+        .recorded-files ul {
+            list-style: none;
+            padding: 0;
+            max-height: 150px; /* Scrollable list for many recordings */
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        .recorded-files li {
+            background-color: #fff;
+            margin-bottom: 8px;
+            padding: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content:center;
+            align-items: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+        .recorded-files li a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+            margin-right: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex-grow: 1;
+        }
+        .recorded-files li a:hover {
+            text-decoration: underline;
+        }
+        .recorded-files li button {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background-color 0.2s;
+        }
+        .recorded-files li button:hover {
+            background-color: #dc2626;
+        }
+        /* Recording indicator (flashing dot) */
+        .recording-indicator {
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: #ef4444;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        .recording-indicator.show {
+            display: flex; /* Show when 'show' class is added */
+        }
+        .recording-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #ef4444;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite; /* Pulse animation */
+        }
+        /* Keyframes for the pulse animation */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        /* Styling for SDP display areas */
+        .sdp-display {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap; /* Preserve whitespace and wrap long lines */
+            word-break: break-all; /* Break words to prevent horizontal scroll */
+            max-height: 200px;
+            overflow-y: auto;
+            color: #374151;
+            margin-top: 10px;
+            display: none; /* Hidden by default */
+        }
+        .sdp-display.show {
+            display: block; /* Show when 'show' class is added */
+        }
+        .sdp-label {
+            font-weight: 600;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <!-- Role Selection Modal: Appears if no role is specified in the URL -->
+    <div id="role-selection-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:#fff; padding:32px 24px; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.15); display:flex; flex-direction:column; align-items:center; gap:20px; min-width:300px;">
+            <h2 class="text-xl font-bold mb-2">Select your role</h2>
+            <div style="display:flex; gap:16px;">
+                <button id="selectUserA" class="btn btn-primary">User A</button>
+                <button id="selectUserB" class="btn btn-primary">User B</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- User A Panel -->
+        <div id="userA-panel" class="user-panel">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">User A</h2>
+            <div id="userA-status" class="status-message status-info"></div>
+            <button id="callB-btn" class="btn btn-primary">Call User B</button>
+            <!-- Notification box for incoming calls to User A -->
+            <div id="userA-notification" class="notification-box">
+                <p id="userA-notification-text" class="flex-grow">Incoming call from User B...</p>
+                <button id="userA-accept-btn" class="btn btn-success px-4 py-2">Accept</button>
+                <button id="userA-reject-btn" class="btn btn-danger px-4 py-2">Reject</button>
+            </div>
+            <audio id="remoteAudioA" autoplay></audio>
+            <button id="endCallA-btn" class="btn btn-danger hidden">End Call</button>
+            <div class="recording-controls">
+                <button id="startRecordingA-btn" class="btn btn-secondary hidden">Start Recording</button>
+                <button id="stopRecordingA-btn" class="btn btn-secondary hidden">Stop Recording</button>
+            </div>
+            <div id="recordingIndicatorA" class="recording-indicator"><div class="recording-dot"></div> Recording...</div>
+            <div class="recorded-files" id="recordedFilesA"><h3>Recorded Audio</h3><ul id="recordedListA"></ul></div>
+
+            <!-- SDP Display for User A -->
+            <div class="sdp-label">SDP Offer (Local)</div>
+            <pre id="userA-sdp-offer" class="sdp-display"></pre>
+            <div class="sdp-label">SDP Answer (Remote)</div>
+            <pre id="userA-sdp-answer" class="sdp-display"></pre>
+        </div>
+
+        <!-- User B Panel -->
+        <div id="userB-panel" class="user-panel">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">User B</h2>
+            <div id="userB-status" class="status-message status-info"></div>
+            <button id="callA-btn" class="btn btn-primary">Call User A</button>
+            <!-- Notification box for incoming calls to User B -->
+            <div id="userB-notification" class="notification-box">
+                <p id="userB-notification-text" class="flex-grow">Incoming call from User A...</p>
+                <button id="userB-accept-btn" class="btn btn-success px-4 py-2">Accept</button>
+                <button id="userB-reject-btn" class="btn btn-danger px-4 py-2">Reject</button>
+            </div>
+            <audio id="remoteAudioB" autoplay></audio>
+            <button id="endCallB-btn" class="btn btn-danger hidden">End Call</button>
+            <div class="recording-controls">
+                <button id="startRecordingB-btn" class="btn btn-secondary hidden">Start Recording</button>
+                <button id="stopRecordingB-btn" class="btn btn-secondary hidden">Stop Recording</button>
+            </div>
+            <div id="recordingIndicatorB" class="recording-indicator"><div class="recording-dot"></div> Recording...</div>
+            <div class="recorded-files" id="recordedFilesB"><h3>Recorded Audio</h3><ul id="recordedListB"></ul></div>
+
+            <!-- SDP Display for User B -->
+            <div class="sdp-label">SDP Offer (Remote)</div>
+            <pre id="userB-sdp-offer" class="sdp-display"></pre>
+            <div class="sdp-label">SDP Answer (Local)</div>
+            <pre id="userB-sdp-answer" class="sdp-display"></pre>
+        </div>
+    </div>
+
+    <script>
+        // --- Socket.io Signaling Setup ---
+        // Connect to the Socket.io signaling server running on localhost:3001
+        const socket = io('http://localhost:3001');
+
+        let myRole = null; // Stores the current user's role ('userA' or 'userB')
+        let otherRole = null; // Stores the role of the other user
+
+        // Helper function to determine the other user's role
+        function getOtherRole(role) {
+            return role === 'userA' ? 'userB' : 'userA';
+        }
+
+        // Register the current user's role with the signaling server
+        function registerWithServer(role) {
+            myRole = role;
+            otherRole = getOtherRole(role);
+            socket.emit('register', role); // Send 'register' event to the server
+            console.log(`Registered as ${myRole}. Other user is ${otherRole}`);
+        }
+
+        // Handle incoming call notification from the signaling server
+        socket.on('incoming-call', async ({ from, offer }) => {
+            console.log(`Incoming call from ${from}`);
+            // Determine which panel's notification to show based on `myRole`
+            if (myRole === 'userA') {
+                userANotificationText.textContent = `Incoming call from ${from}...`;
+                userANotification.classList.add('show');
+                userAAcceptBtn.onclick = () => acceptCall(offer, from, myRole, true);
+                userARejectBtn.onclick = () => rejectCall(from, myRole, true);
+                // Display remote SDP offer (from 'from' user)
+                getEl('userA-sdp-offer').textContent = offer.sdp;
+                getEl('userA-sdp-offer').classList.add('show');
+            } else { // myRole === 'userB'
+                userBNotificationText.textContent = `Incoming call from ${from}...`;
+                userBNotification.classList.add('show');
+                userBAcceptBtn.onclick = () => acceptCall(offer, from, myRole, true);
+                userBRejectBtn.onclick = () => rejectCall(from, myRole, true);
+                // Display remote SDP offer (from 'from' user)
+                getEl('userB-sdp-offer').textContent = offer.sdp;
+                getEl('userB-sdp-offer').classList.add('show');
+            }
+        });
+
+        // Handle 'call-answered' event from the signaling server
+        socket.on('call-answered', async ({ from, answer }) => {
+            console.log(`Call answered by ${from}`);
+            await handleAnswer(answer, myRole, from);
+        });
+
+        // Handle 'ice-candidate' event for WebRTC connectivity
+        socket.on('ice-candidate', async ({ from, candidate }) => {
+            console.log(`Received ICE candidate from ${from}`);
+            await handleIceCandidate(candidate, myRole);
+        });
+
+        // Handle 'call-ended' event from the signaling server
+        socket.on('call-ended', ({ from }) => {
+            console.log(`Call ended by ${from}`);
+            // End the call locally for both users involved
+            endCall(myRole, from);
+        });
+
+        // Listen for synchronized recording start signal
+        socket.on('start-recording-signal', ({ from }) => {
+            console.log(`Received start recording signal from ${from}`);
+            // Trigger local recording start if it's not already recording
+            if (mediaRecorders[myRole] && mediaRecorders[myRole].state !== 'recording') {
+                startRecording(myRole);
+                showStatus(getEl(`${myRole}-status`), `Recording started by ${from}.`, 'info');
+            }
+        });
+
+        // Listen for synchronized recording stop signal
+        socket.on('stop-recording-signal', ({ from }) => {
+            console.log(`Received stop recording signal from ${from}`);
+            // Trigger local recording stop if it's recording
+            if (mediaRecorders[myRole] && mediaRecorders[myRole].state === 'recording') {
+                stopRecording(myRole);
+                showStatus(getEl(`${myRole}-status`), `Recording stopped by ${from}.`, 'info');
+            }
+        });
+        // --- End Socket.io Signaling Setup ---
+
+
+        // --- UI Element References ---
+        // Helper function to get DOM elements by ID
+        const getEl = (id) => document.getElementById(id);
+
+        // UI elements for User A
+        const userAPanel = getEl('userA-panel');
+        const userAStatus = getEl('userA-status');
+        const callBBtn = getEl('callB-btn');
+        const userANotification = getEl('userA-notification');
+        const userANotificationText = getEl('userA-notification-text');
+        const userAAcceptBtn = getEl('userA-accept-btn');
+        const userARejectBtn = getEl('userA-reject-btn');
+        const remoteAudioA = getEl('remoteAudioA');
+        const endCallABtn = getEl('endCallA-btn');
+        const startRecordingABtn = getEl('startRecordingA-btn');
+        const stopRecordingABtn = getEl('stopRecordingA-btn');
+        const recordedListA = getEl('recordedListA');
+        const recordingIndicatorA = getEl('recordingIndicatorA');
+        const userASdpOffer = getEl('userA-sdp-offer');
+        const userASdpAnswer = getEl('userA-sdp-answer');
+
+        // UI elements for User B
+        const userBPanel = getEl('userB-panel');
+        const userBStatus = getEl('userB-status');
+        const callABtn = getEl('callA-btn');
+        const userBNotification = getEl('userB-notification');
+        const userBNotificationText = getEl('userB-notification-text');
+        const userBAcceptBtn = getEl('userB-accept-btn');
+        const userBRejectBtn = getEl('userB-reject-btn');
+        const remoteAudioB = getEl('remoteAudioB');
+        const endCallBBtn = getEl('endCallB-btn');
+        const startRecordingBBtn = getEl('startRecordingB-btn');
+        const stopRecordingBBtn = getEl('stopRecordingB-btn');
+        const recordedListB = getEl('recordedListB');
+        const recordingIndicatorB = getEl('recordingIndicatorB');
+        const userBSdpOffer = getEl('userB-sdp-offer');
+        const userBSdpAnswer = getEl('userB-sdp-answer');
+        // --- End UI Element References ---
+
+
+        // --- WebRTC and Media Recording Logic ---
+        // Configuration for STUN servers (used by WebRTC for NAT traversal)
+        // DTLS-SRTP is enabled by default by modern browsers for security.
+        const rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+            ],
+            iceCandidatePoolSize: 0, // Set to 0 for faster candidate gathering in some scenarios.
+        };
+
+        // Stores RTCPeerConnection objects, indexed by user ID
+        const peerConnections = {};
+        // Stores local media streams (microphone), indexed by user ID
+        const localStreams = {};
+        // References to remote audio elements, indexed by user ID
+        const remoteAudios = { userA: remoteAudioA, userB: remoteAudioB };
+        // Stores remote media streams received from other peers, indexed by user ID
+        const remoteStreams = {};
+        // Stores MediaRecorder objects for recording mixed audio, indexed by user ID
+        const mediaRecorders = {};
+        // Stores recorded audio chunks, indexed by user ID
+        const recordedChunks = {};
+        // Stores AudioContext objects for audio processing, indexed by user ID
+        const audioContexts = {};
+        // Stores MediaStreamDestination nodes for combining audio streams, indexed by user ID
+        const destinationNodes = {};
+
+        // Function to display status messages in the UI
+        function showStatus(statusDiv, message, type) {
+            statusDiv.textContent = message;
+            // Apply appropriate CSS classes for styling and visibility
+            statusDiv.className = `status-message status-${type} show`;
+            // Hide the status message after 3 seconds
+            setTimeout(() => { statusDiv.classList.remove('show'); }, 3000);
+        }
+
+        // Function to get access to the user's local media (microphone)
+        async function getLocalMediaStream(userId) {
+            // Return existing stream if already captured
+            if (localStreams[userId]) return localStreams[userId];
+            try {
+                // Request audio-only media access with specific constraints for quality
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        sampleRate: 48000, // Desired sample rate for media (Opus default)
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                    },
+                    video: false // No video needed for this audio-only app
+                });
+                localStreams[userId] = stream; // Store the stream
+                showStatus(getEl(`${userId}-status`), `Microphone access granted for ${userId}`, 'success');
+                return stream;
+            } catch (error) {
+                // Display error if microphone access is denied or fails
+                showStatus(getEl(`${userId}-status`), `Error getting microphone: ${error.name}`, 'error');
+                console.error("Error getting user media:", error);
+                return null;
+            }
+        }
+
+        // Function to set up the MediaRecorder for recording audio
+        function setupMediaRecorder(userId, streamToRecord) {
+            recordedChunks[userId] = []; // Initialize array for new recording
+            const options = { mimeType: 'audio/webm; codecs=opus' }; // Prefer Opus codec for recording
+            // Fallback to a simpler mimeType if opus is not supported
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options.mimeType = 'audio/webm';
+            }
+
+            try {
+                // Create a new MediaRecorder instance
+                const recorder = new MediaRecorder(streamToRecord, options);
+                // Store data chunks as they become available
+                recorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks[userId].push(event.data);
+                };
+                // Actions to take when recording stops
+                recorder.onstop = () => {
+                    showStatus(getEl(`${userId}-status`), `Recording saved for ${userId}.`, 'success');
+                    // Hide recording indicator and show start recording button
+                    getEl(`recordingIndicator${userId === 'userA' ? 'A' : 'B'}`).classList.remove('show');
+                    getEl(`startRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.remove('hidden');
+                    getEl(`stopRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.add('hidden');
+                    downloadRecording(userId); // Trigger download process
+                };
+                // Handle recording errors
+                recorder.onerror = (event) => showStatus(getEl(`${userId}-status`), `Recording error: ${event.error.name}`, 'error');
+                mediaRecorders[userId] = recorder; // Store the recorder instance
+            } catch (error) {
+                showStatus(getEl(`${userId}-status`), `Recording setup failed: ${error.message}`, 'error');
+                console.error("MediaRecorder setup failed:", error);
+            }
+        }
+
+        // Function to start recording the mixed audio stream locally
+        function startRecording(userId) {
+            if (!mediaRecorders[userId]) {
+                showStatus(getEl(`${userId}-status`), 'Audio pipeline not ready for recording.', 'error');
+                return;
+            }
+            if (mediaRecorders[userId].state === 'recording') {
+                showStatus(getEl(`${userId}-status`), 'Already recording.', 'info');
+                return;
+            }
+            recordedChunks[userId] = []; // Clear previous chunks
+            mediaRecorders[userId].start(); // Start recording
+            showStatus(getEl(`${userId}-status`), 'Recording mixed audio...', 'info');
+            // Show recording indicator and hide start button
+            getEl(`recordingIndicator${userId === 'userA' ? 'A' : 'B'}`).classList.add('show');
+            getEl(`startRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.add('hidden');
+            getEl(`stopRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.remove('hidden');
+        }
+
+        // Function to stop the active recording locally
+        function stopRecording(userId) {
+            if (mediaRecorders[userId] && mediaRecorders[userId].state === 'recording') {
+                mediaRecorders[userId].stop(); // Stop recording
+            } else {
+                showStatus(getEl(`${userId}-status`), 'No active recording to stop.', 'info');
+            }
+        }
+
+        // Function to create a downloadable link for the recorded audio
+        function downloadRecording(userId) {
+            if (recordedChunks[userId].length > 0) {
+                // Create a Blob from the recorded chunks
+                const blob = new Blob(recordedChunks[userId], { type: mediaRecorders[userId].mimeType });
+                const url = URL.createObjectURL(blob); // Create a URL for the Blob
+                // Generate a timestamp for the filename
+                const timestamp = new Date().toLocaleString().replace(/[/:]/g, '-').replace(/, /g, '_');
+
+                // Create list item for the recording
+                const listItem = document.createElement('li');
+                const downloadLink = document.createElement('a');
+                downloadLink.href = url;
+                downloadLink.textContent = `Recording_${timestamp}.webm`;
+                downloadLink.download = `${userId}_recorded_call_${timestamp}.webm`; // Set download filename
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                // Remove the list item and revoke the URL when delete button is clicked
+                deleteButton.onclick = () => {
+                    listItem.remove();
+                    URL.revokeObjectURL(url);
+                };
+
+                listItem.appendChild(downloadLink);
+                listItem.appendChild(deleteButton);
+                getEl(`recordedList${userId === 'userA' ? 'A' : 'B'}`).appendChild(listItem); // Add to UI
+            } else {
+                showStatus(getEl(`${userId}-status`), 'No audio recorded.', 'info');
+            }
+        }
+
+        // Function to initialize the Web Audio API pipeline for mixing local and remote audio
+        function initializeAudioPipelineAndRecorder(userId, remoteUserId) {
+            const localStream = localStreams[userId];
+            const remoteStream = remoteStreams[userId];
+            const remoteAudioEl = getEl(`remoteAudio${userId === 'userA' ? 'A' : 'B'}`);
+
+            if (!localStream || !remoteStream) {
+                console.warn(`Cannot initialize audio pipeline for ${userId}: missing local or remote stream.`);
+                return;
+            }
+
+            // Close existing AudioContext if it exists
+            if (audioContexts[userId]) {
+                audioContexts[userId].close();
+                delete audioContexts[userId];
+            }
+
+            // Create a new AudioContext
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioContexts[userId] = audioCtx;
+
+            // Create audio sources from local and remote streams
+            const localAudioSource = audioCtx.createMediaStreamSource(localStream);
+            const remoteAudioSource = audioCtx.createMediaStreamSource(remoteStream);
+
+            // Create a MediaStreamDestination node to capture the mixed audio
+            const destinationNode = audioCtx.createMediaStreamDestination();
+            destinationNodes[userId] = destinationNode;
+
+            // Connect local and remote audio sources to the destination node
+            localAudioSource.connect(destinationNode);
+            remoteAudioSource.connect(destinationNode);
+
+            // Set the remote audio element's source to the mixed stream
+            remoteAudioEl.srcObject = destinationNode.stream;
+            remoteAudioEl.classList.add('show');
+
+            // Set up the MediaRecorder to record the mixed stream
+            setupMediaRecorder(userId, destinationNode.stream);
+            getEl(`startRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.remove('hidden');
+        }
+
+
+        // Function to create and configure a new RTCPeerConnection
+        function createPeerConnection(currentUserId, remoteUserId) {
+            // Close existing peer connection if it exists to ensure a clean slate
+            if (peerConnections[currentUserId]) {
+                peerConnections[currentUserId].close();
+                delete peerConnections[currentUserId];
+            }
+
+            const pc = new RTCPeerConnection(rtcConfig); // Create new RTCPeerConnection
+            peerConnections[currentUserId] = pc; // Store it
+
+            // Event handler for ICE candidates: send them to the other peer via the signaling server
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    // ICE Process: When a new ICE candidate is generated, send it to the other peer.
+                    // This candidate describes a potential way to connect to this peer.
+                    console.log(`ICE Candidate for ${currentUserId}: `, event.candidate);
+                    showStatus(getEl(`${currentUserId}-status`), `Generated ICE candidate.`, 'info');
+                    socket.emit('ice-candidate', { from: currentUserId, to: remoteUserId, candidate: event.candidate });
+                }
+            };
+
+            // Event handler for when a remote track is received (e.g., other user's audio)
+            pc.ontrack = (event) => {
+                if (event.streams && event.streams[0]) {
+                    remoteStreams[currentUserId] = event.streams[0]; // Store the remote stream
+                    getEl(`${currentUserId}-panel`).classList.add('active-call'); // Highlight panel
+                    showStatus(getEl(`${currentUserId}-status`), `Connected with ${remoteUserId}`, 'success');
+                    // Once both local and remote streams are available, initialize the audio pipeline for recording
+                    initializeAudioPipelineAndRecorder(currentUserId, remoteUserId);
+                }
+            };
+
+            // Event handler for changes in ICE connection state
+            pc.oniceconnectionstatechange = () => {
+                const statusDiv = getEl(`${currentUserId}-status`);
+                const state = pc.iceConnectionState;
+                // ICE Process: Monitor the state of the ICE connection.
+                // 'new': initial state.
+                // 'checking': gathering and exchanging candidates.
+                // 'connected': connection established (at least one candidate pair working).
+                // 'completed': ICE negotiation finished, all candidate pairs checked.
+                // 'disconnected': connection lost temporarily.
+                // 'failed': connection permanently lost.
+                console.log(`${currentUserId} ICE connection state: ${state}`);
+                if (state === 'connected') {
+                    showStatus(statusDiv, `${currentUserId} ICE connection state: ${state} (Audio flowing)`, 'success');
+                } else if (state === 'failed' || state === 'disconnected') {
+                    showStatus(statusDiv, `${currentUserId} ICE connection state: ${state}. Call might be interrupted.`, 'error');
+                } else {
+                    showStatus(statusDiv, `${currentUserId} ICE connection state: ${state}...`, 'info');
+                }
+            };
+
+            // Event handler for signaling state changes (e.g., 'stable', 'have-local-offer')
+            pc.onsignalingstatechange = () => {
+                console.log(`${currentUserId} Signaling state: ${pc.signalingState}`);
+            };
+
+            return pc;
+        }
+
+        // Function to initiate a call
+        async function initiateCall(callerId, calleeId) {
+            const callerStatus = getEl(`${callerId}-status`);
+            const callerCallBtn = getEl(`call${calleeId === 'userA' ? 'A' : 'B'}-btn`);
+            const callerEndCallBtn = getEl(`endCall${callerId === 'userA' ? 'A' : 'B'}-btn`);
+
+            // Clear previous SDP displays
+            if (callerId === 'userA') {
+                userASdpOffer.textContent = '';
+                userASdpOffer.classList.remove('show');
+                userASdpAnswer.textContent = '';
+                userASdpAnswer.classList.remove('show');
+            } else {
+                userBSdpOffer.textContent = '';
+                userBSdpOffer.classList.remove('show');
+                userBSdpAnswer.textContent = '';
+                userBSdpAnswer.classList.remove('show');
+            }
+
+
+            showStatus(callerStatus, `Requesting microphone access for ${callerId}...`, 'info');
+            const localStream = await getLocalMediaStream(callerId); // Get local audio stream
+            if (!localStream) return; // Exit if microphone access failed
+
+            const pc = createPeerConnection(callerId, calleeId); // Create peer connection
+
+            // Add local audio tracks to the peer connection
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            try {
+                // Create an SDP offer
+                const offer = await pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: false });
+
+                await pc.setLocalDescription(offer); // Set local description
+
+                // Display local SDP offer
+                if (callerId === 'userA') {
+                    userASdpOffer.textContent = pc.localDescription.sdp;
+                    userASdpOffer.classList.add('show');
+                } else {
+                    userBSdpAnswer.textContent = pc.localDescription.sdp; // User B's local description is the answer
+                    userBSdpAnswer.classList.add('show');
+                }
+
+
+                showStatus(callerStatus, `Calling ${calleeId}...`, 'info');
+                callerCallBtn.classList.add('hidden'); // Hide call button
+                // Send the offer to the callee via the signaling server
+                socket.emit('call', { from: callerId, to: calleeId, offer: pc.localDescription });
+                callerEndCallBtn.classList.remove('hidden'); // Show end call button
+                callerEndCallBtn.onclick = () => endCall(callerId, calleeId); // Set end call listener
+            } catch (error) {
+                showStatus(callerStatus, `Call failed: ${error.message}`, 'error');
+                console.error("Initiate call error:", error);
+                endCall(callerId, calleeId); // Clean up if call initiation fails
+            }
+        }
+
+        // Function to accept an incoming call
+        async function acceptCall(offer, callerId, calleeId, fromSocket) {
+            const calleeStatus = getEl(`${calleeId}-status`);
+            const calleeNotification = getEl(`${calleeId}-notification`);
+            const calleeEndCallBtn = getEl(`endCall${calleeId === 'userA' ? 'A' : 'B'}-btn`);
+            const calleeCallBtn = getEl(`call${callerId === 'userA' ? 'A' : 'B'}-btn`);
+
+            // Clear previous SDP displays
+            if (calleeId === 'userA') {
+                userASdpOffer.textContent = '';
+                userASdpOffer.classList.remove('show');
+                userASdpAnswer.textContent = '';
+                userASdpAnswer.classList.remove('show');
+            } else {
+                userBSdpOffer.textContent = '';
+                userBSdpOffer.classList.remove('show');
+                userBSdpAnswer.textContent = '';
+                userBSdpAnswer.classList.remove('show');
+            }
+
+
+            calleeNotification.classList.remove('show'); // Hide incoming call notification
+            showStatus(calleeStatus, `Requesting microphone access for ${calleeId}...`, 'info');
+
+            const localStream = await getLocalMediaStream(calleeId); // Get local audio stream
+            if (!localStream) return; // Exit if microphone access failed
+
+            const pc = createPeerConnection(calleeId, callerId); // Create peer connection
+
+            // Add local audio tracks to the peer connection
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            try {
+                await pc.setRemoteDescription(new RTCSessionDescription(offer)); // Set remote description with the received offer
+
+                const answer = await pc.createAnswer(); // Create an SDP answer
+
+                await pc.setLocalDescription(answer); // Set local description
+
+                // Display local SDP answer
+                if (calleeId === 'userA') {
+                    userASdpAnswer.textContent = pc.localDescription.sdp;
+                    userASdpAnswer.classList.add('show');
+                } else {
+                    userBSdpAnswer.textContent = pc.localDescription.sdp;
+                    userBSdpAnswer.classList.add('show');
+                }
+
+
+                showStatus(calleeStatus, `Connecting to ${callerId}...`, 'info');
+                // Send the answer back to the caller via the signaling server
+                socket.emit('answer', { from: calleeId, to: callerId, answer: pc.localDescription });
+                calleeCallBtn.classList.add('hidden'); // Hide call button
+                calleeEndCallBtn.classList.remove('hidden'); // Show end call button
+                calleeEndCallBtn.onclick = () => endCall(calleeId, callerId); // Set end call listener
+            } catch (error) {
+                showStatus(calleeStatus, `Call acceptance failed: ${error.message}`, 'error');
+                console.error("Accept call error:", error);
+                endCall(calleeId, callerId); // Clean up if acceptance fails
+            }
+        }
+
+        // Function to handle the answer received from the callee
+        async function handleAnswer(answer, callerId, calleeId) {
+            const pc = peerConnections[callerId];
+            // Only set remote description if the signaling state is not 'stable' (meaning an offer has been sent)
+            if (pc && pc.signalingState !== 'stable') {
+                try {
+                    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+                    // Display remote SDP answer
+                    if (callerId === 'userA') {
+                        userASdpAnswer.textContent = answer.sdp;
+                        userASdpAnswer.classList.add('show');
+                    } else {
+                        userBSdpOffer.textContent = answer.sdp; // User B is the offerer here
+                        userBSdpOffer.classList.add('show');
+                    }
+                    showStatus(getEl(`${callerId}-status`), `Call with ${calleeId} connecting...`, 'info');
+                } catch (error) {
+                    showStatus(getEl(`${callerId}-status`), `Call connection failed: ${error.message}`, 'error');
+                    console.error("Handle answer error:", error);
+                    endCall(callerId, calleeId); // Clean up if setting remote description fails
+                }
+            }
+        }
+
+        // Function to handle received ICE candidates
+        async function handleIceCandidate(candidate, targetUserId) {
+            const pc = peerConnections[targetUserId];
+            if (pc && candidate) {
+                try {
+                    await pc.addIceCandidate(candidate); // Add the ICE candidate to the peer connection
+                    showStatus(getEl(`${targetUserId}-status`), `Added ICE candidate.`, 'info');
+                } catch (error) {
+                    // Ignore errors if the candidate cannot be added (e.g., if connection is already established)
+                    console.warn("Error adding ICE candidate:", error);
+                }
+            }
+        }
+
+        // Function to reject an incoming call
+        function rejectCall(callerId, calleeId, fromSocket) {
+            // If the reject was initiated locally, notify the other peer via socket
+            if (!fromSocket) {
+                socket.emit('end-call', { from: calleeId, to: callerId });
+            }
+
+            const calleeNotification = getEl(`${calleeId}-notification`);
+            const callerStatus = getEl(`${callerId}-status`);
+            const calleeCallBtn = getEl(`call${callerId === 'userA' ? 'A' : 'B'}-btn`);
+            const callerEndCallBtn = getEl(`endCall${callerId === 'userA' ? 'A' : 'B'}-btn`);
+
+            calleeNotification.classList.remove('show'); // Hide notification
+            showStatus(getEl(`${calleeId}-status`), `Call from ${callerId} rejected.`, 'error');
+            showStatus(callerStatus, `${calleeId} rejected your call.`, 'error');
+
+            // If a peer connection was already established (e.g., for immediate rejection after an offer)
+            if (peerConnections[callerId]) {
+                endCall(callerId, calleeId); // Ensure full cleanup
+            }
+
+            calleeCallBtn.classList.remove('hidden'); // Show call button for callee
+            callerEndCallBtn.classList.add('hidden'); // Hide end call button for caller
+
+            // Clear SDP displays on rejection
+            if (calleeId === 'userA') {
+                userASdpOffer.textContent = '';
+                userASdpOffer.classList.remove('show');
+                userASdpAnswer.textContent = '';
+                userASdpAnswer.classList.remove('show');
+            } else {
+                userBSdpOffer.textContent = '';
+                userBSdpOffer.classList.remove('show');
+                userBSdpAnswer.textContent = '';
+                userBSdpAnswer.classList.remove('show');
+            }
+        }
+
+        // Function to end an active call and clean up resources
+        function endCall(userId1, userId2) {
+            // Notify the other user via signaling server that the call has ended
+            socket.emit('end-call', { from: userId1, to: userId2 });
+
+            // Stop any ongoing recordings for both users
+            [userId1, userId2].forEach(userId => {
+                if (mediaRecorders[userId] && mediaRecorders[userId].state === 'recording') {
+                    mediaRecorders[userId].stop();
+                }
+            });
+
+            // Clean up WebRTC and media resources for both users
+            [userId1, userId2].forEach(userId => {
+                // Close AudioContext and related nodes
+                if (audioContexts[userId]) {
+                    audioContexts[userId].close();
+                    delete audioContexts[userId];
+                }
+                if (destinationNodes[userId] && destinationNodes[userId].stream) {
+                    destinationNodes[userId].stream.getTracks().forEach(track => track.stop());
+                    delete destinationNodes[userId];
+                }
+
+                // Stop remote media streams
+                delete remoteStreams[userId];
+
+                // Close RTCPeerConnection
+                if (peerConnections[userId]) {
+                    peerConnections[userId].close();
+                    delete peerConnections[userId];
+                }
+
+                // Stop local media (microphone) tracks
+                if (localStreams[userId]) {
+                    localStreams[userId].getTracks().forEach(track => track.stop());
+                    delete localStreams[userId];
+                }
+
+                // Reset UI elements
+                remoteAudios[userId]?.classList.remove('show');
+                remoteAudios[userId].srcObject = null;
+                showStatus(getEl(`${userId}-status`), `Call ended.`, 'info');
+                getEl(`endCall${userId === 'userA' ? 'A' : 'B'}-btn`).classList.add('hidden');
+
+                const otherUserCallBtnId = (userId === 'userA') ? 'callB-btn' : 'callA-btn';
+                getEl(otherUserCallBtnId).classList.remove('hidden'); // Show call button
+
+                getEl(`${userId}-panel`).classList.remove('active-call'); // Remove active call highlight
+
+                // Hide recording controls and indicator
+                getEl(`startRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.add('hidden');
+                getEl(`stopRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.add('hidden');
+                getEl(`recordingIndicator${userId === 'userA' ? 'A' : 'B'}`).classList.remove('show');
+
+                // Clear SDP displays
+                if (userId === 'userA') {
+                    userASdpOffer.textContent = '';
+                    userASdpOffer.classList.remove('show');
+                    userASdpAnswer.textContent = '';
+                    userASdpAnswer.classList.remove('show');
+                } else {
+                    userBSdpOffer.textContent = '';
+                    userBSdpOffer.classList.remove('show');
+                    userBSdpAnswer.textContent = '';
+                    userBSdpAnswer.classList.remove('show');
+                }
+            });
+
+            // Hide any lingering notification pop-ups
+            userANotification.classList.remove('show');
+            userBNotification.classList.remove('show');
+        }
+        // --- End WebRTC and Media Recording Logic ---
+
+
+        // --- Role Selection Logic ---
+        // Get user role from URL query parameters (e.g., ?role=A)
+        function getRoleFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const role = params.get('role');
+            if (role === 'A' || role === 'B') {
+                return `user${role}`; // Return as 'userA' or 'userB'
+            }
+            return null;
+        }
+
+        // Set the user role in the URL and reload the page
+        function setRoleInURL(role) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('role', role);
+            window.location.href = url.toString(); // Redirect to the URL with the role
+        }
+
+        // Show the role selection modal
+        function showRoleSelectionModal() {
+            document.getElementById('role-selection-modal').style.display = 'flex';
+            // Set up click listeners for role selection buttons
+            document.getElementById('selectUserA').onclick = () => setRoleInURL('A');
+            document.getElementById('selectUserB').onclick = () => setRoleInURL('B');
+        }
+
+        // Show only the relevant user panel based on the selected role
+        function showPanelForRole(role) {
+            if (role === 'userA') {
+                userAPanel.style.display = ''; // Show User A panel
+                userBPanel.style.display = 'none'; // Hide User B panel
+            } else if (role === 'userB') {
+                userAPanel.style.display = 'none'; // Hide User A panel
+                userBPanel.style.display = ''; // Show User B panel
+            }
+        }
+        // --- End Role Selection Logic ---
+
+
+        // --- Event Listeners for UI Actions ---
+        // User A's "Call User B" button
+        callBBtn.addEventListener('click', () => initiateCall('userA', 'userB'));
+        // User B's "Call User A" button
+        callABtn.addEventListener('click', () => initiateCall('userB', 'userA'));
+
+        // User A's "End Call" button
+        endCallABtn.addEventListener('click', () => endCall('userA', 'userB'));
+        // User B's "End Call" button
+        endCallBBtn.addEventListener('click', () => endCall('userB', 'userA'));
+
+        // User A's recording controls now send signals
+        startRecordingABtn.addEventListener('click', () => {
+            // Start local recording first
+            startRecording(myRole);
+            showStatus(getEl(`${myRole}-status`), 'Initiating recording...', 'info');
+            // Then send signal to other user
+            if (otherRole) {
+                socket.emit('start-recording-request', { from: myRole, to: otherRole });
+            }
+        });
+        stopRecordingABtn.addEventListener('click', () => {
+            // Stop local recording first
+            stopRecording(myRole);
+            showStatus(getEl(`${myRole}-status`), 'Stopping recording...', 'info');
+            // Then send signal to other user
+            if (otherRole) {
+                socket.emit('stop-recording-request', { from: myRole, to: otherRole });
+            }
+        });
+
+        // User B's recording controls now send signals
+        startRecordingBBtn.addEventListener('click', () => {
+            // Start local recording first
+            startRecording(myRole);
+            showStatus(getEl(`${myRole}-status`), 'Initiating recording...', 'info');
+            // Then send signal to other user
+            if (otherRole) {
+                socket.emit('start-recording-request', { from: myRole, to: otherRole });
+            }
+        });
+        stopRecordingBBtn.addEventListener('click', () => {
+            // Stop local recording first
+            stopRecording(myRole);
+            showStatus(getEl(`${myRole}-status`), 'Stopping recording...', 'info');
+            // Then send signal to other user
+            if (otherRole) {
+                socket.emit('stop-recording-request', { from: myRole, to: otherRole });
+            }
+        });
+        // --- End Event Listeners for UI Actions ---
+
+
+        // --- Initialization on Window Load ---
+        window.onload = () => {
+            const role = getRoleFromURL(); // Try to get role from URL
+            if (!role) {
+                // If no role in URL, show the selection modal
+                showRoleSelectionModal();
+                userAPanel.style.display = 'none'; // Hide both panels initially
+                userBPanel.style.display = 'none';
+                return;
+            }
+            // If role is found, show the appropriate panel and register with the server
+            showPanelForRole(role);
+            registerWithServer(role);
+            // Display initial status message based on the role
+            if (role === 'userA') {
+                showStatus(userAStatus, 'Ready to call User B.', 'info');
+            } else { // role === 'userB'
+                showStatus(userBStatus, 'Ready to call User A.', 'info');
+            }
+        };
+        // --- End Initialization on Window Load ---
+    </script>
+</body>
+</html>
