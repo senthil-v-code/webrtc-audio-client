@@ -712,43 +712,31 @@
             }
         }
 
-        // Function to initialize the Web Audio API pipeline for mixing local and remote audio
+        // Function to initialize the Web Audio API pipeline for mixing local and remote audio (for recording only)
         function initializeAudioPipelineAndRecorder(userId, remoteUserId) {
             const localStream = localStreams[userId];
             const remoteStream = remoteStreams[userId];
-            const remoteAudioEl = getEl(`remoteAudio${userId === 'userA' ? 'A' : 'B'}`);
-
             if (!localStream || !remoteStream) {
                 console.warn(`Cannot initialize audio pipeline for ${userId}: missing local or remote stream.`);
                 return;
             }
-
             // Close existing AudioContext if it exists
             if (audioContexts[userId]) {
                 audioContexts[userId].close();
                 delete audioContexts[userId];
             }
-
             // Create a new AudioContext
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             audioContexts[userId] = audioCtx;
-
             // Create audio sources from local and remote streams
             const localAudioSource = audioCtx.createMediaStreamSource(localStream);
             const remoteAudioSource = audioCtx.createMediaStreamSource(remoteStream);
-
             // Create a MediaStreamDestination node to capture the mixed audio
             const destinationNode = audioCtx.createMediaStreamDestination();
             destinationNodes[userId] = destinationNode;
-
             // Connect local and remote audio sources to the destination node
             localAudioSource.connect(destinationNode);
             remoteAudioSource.connect(destinationNode);
-
-            // Set the remote audio element's source to the mixed stream
-            remoteAudioEl.srcObject = destinationNode.stream;
-            remoteAudioEl.classList.add('show');
-
             // Set up the MediaRecorder to record the mixed stream
             setupMediaRecorder(userId, destinationNode.stream);
             getEl(`startRecording${userId === 'userA' ? 'A' : 'B'}-btn`).classList.remove('hidden');
@@ -772,6 +760,8 @@
                     const remoteAudioEl = getEl(`remoteAudio${currentUserId === 'userA' ? 'A' : 'B'}`);
                     remoteAudioEl.srcObject = event.streams[0];
                     remoteAudioEl.classList.add('show');
+                    // Set up the mixed audio pipeline for recording (local + remote)
+                    initializeAudioPipelineAndRecorder(currentUserId, remoteUserId);
                 }
             };
             pc.oniceconnectionstatechange = () => {
