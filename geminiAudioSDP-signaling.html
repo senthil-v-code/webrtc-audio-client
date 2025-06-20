@@ -559,8 +559,20 @@
         // DTLS-SRTP is enabled by default by modern browsers for security.
         const rtcConfig = {
             iceServers: [
+                // Google's public STUN servers (reliable for STUN, but not a TURN relay)
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+                // Example public TURN server from Metered.ca (often rate-limited or unreliable for production)
+                // For a robust solution, you should deploy your own TURN server (e.g., using coturn)
+                // or use a commercial TURN service like Twilio or Xirsys.
+                // Replace 'openrelay.metered.ca' with your TURN server address,
+                // and 'openrelay@metered.ca'/'openrelay' with your actual username/credential.
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelay@metered.ca', credential: 'openrelay' },
+                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelay@metered.ca', credential: 'openrelay' },
+                { urls: 'turn:openrelay.metered.ca:49152-65535?transport=udp', username: 'openrelay@metered.ca', credential: 'openrelay' }
             ],
             iceCandidatePoolSize: 0, // Set to 0 for faster candidate gathering in some scenarios.
         };
